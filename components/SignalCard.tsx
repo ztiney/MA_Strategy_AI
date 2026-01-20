@@ -57,9 +57,14 @@ const SignalCard: React.FC<SignalCardProps> = ({ setup }) => {
       <div className="mb-4 bg-slate-800/80 rounded-lg p-3">
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs text-gray-400">均线系统 (MA/EMA 20,60,120)</span>
-          <span className={`text-xs font-mono px-2 rounded ${setup.densityScore < 2 ? 'bg-crypto-yellow/20 text-crypto-yellow' : 'bg-slate-700 text-gray-400'}`}>
-            密集度: {setup.densityScore.toFixed(2)}%
-          </span>
+          <div className="flex gap-2">
+            <span className={`text-xs font-mono px-2 rounded ${setup.priceDeviation > 3 ? 'bg-red-900/40 text-red-400 border border-red-800' : 'bg-slate-700 text-gray-400'}`} title="价格距离均线中心的偏离度">
+               偏离: {setup.priceDeviation.toFixed(2)}%
+            </span>
+            <span className={`text-xs font-mono px-2 rounded ${setup.densityScore < 2 ? 'bg-crypto-yellow/20 text-crypto-yellow' : 'bg-slate-700 text-gray-400'}`} title="6根均线之间的最大差距">
+               密集: {setup.densityScore.toFixed(2)}%
+            </span>
+          </div>
         </div>
         
         <div className="grid grid-cols-3 gap-2 text-[10px] font-mono">

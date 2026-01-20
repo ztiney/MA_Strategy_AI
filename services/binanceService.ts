@@ -216,7 +216,6 @@ export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> 
     signal = SignalType.WATCH;
     reason = `6线高度密集 (宽${densityScore.toFixed(2)}%) 且价格在均线附近 (偏${priceDeviation.toFixed(2)}%)，静待变盘。`;
   } else {
-    // If MAs are tight but Price is far, it fails isDense and falls here.
     
     if (isBullishAlignment && currentPrice > maxVal) {
       signal = SignalType.LONG;
@@ -227,7 +226,7 @@ export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> 
     } else if (densityScore < DENSE_THRESHOLD && priceDeviation >= PRICE_DEV_THRESHOLD) {
        // Special case: MAs are tight, but Price ran away
        signal = SignalType.WAIT;
-       reason = `均线虽然密集，但价格已大幅偏离 (${priceDeviation.toFixed(2)}%)，不宜追单，防范回落。`;
+       reason = `均线虽然密集，但价格已大幅偏离 (${priceDeviation.toFixed(2)}%)，乖离率过大，防范回落风险。`;
     }
   }
 
@@ -249,6 +248,7 @@ export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> 
     price: currentPrice,
     mas,
     densityScore,
+    priceDeviation, // Return this new metric
     atr,
     signal,
     entryPrice: currentPrice,

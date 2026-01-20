@@ -29,6 +29,7 @@ export interface TradeSetup {
   price: number;
   mas: MASet;
   densityScore: number; // Percentage spread between highest and lowest MA
+  priceDeviation: number; // Percentage distance of price from the average of all MAs
   atr: number;
   signal: SignalType;
   entryPrice: number;
