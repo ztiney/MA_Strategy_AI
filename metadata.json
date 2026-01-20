@@ -1,0 +1,5 @@
+{
+  "name": "Binance MA Strategy AI",
+  "description": "基于币安4小时数据的双均线密集策略系统，结合Gemini AI进行趋势分析与交易建议。",
+  "requestFramePermissions": []
+}
