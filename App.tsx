@@ -68,11 +68,11 @@ const App: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="bg-indigo-600 w-8 h-8 rounded-full flex items-center justify-center font-bold text-white shadow-lg shadow-indigo-500/30">
-              V2
+              V3
             </div>
             <h1 className="text-xl font-bold tracking-tight flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
               <span>Binance Strategy</span>
-              <span className="text-crypto-yellow text-sm font-mono bg-crypto-yellow/10 px-2 py-0.5 rounded">六线纠缠系统 (20/60/120)</span>
+              <span className="text-crypto-yellow text-sm font-mono bg-crypto-yellow/10 px-2 py-0.5 rounded">六线纠缠系统 (1H/4H)</span>
             </h1>
           </div>
           <div className="text-xs text-gray-500 hidden sm:block">
@@ -87,11 +87,11 @@ const App: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h2 className="text-2xl font-semibold mb-1 flex items-center gap-2">
-              4小时均线密集策略
+              多周期均线密集策略
               <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded border border-green-500/30">Live Data</span>
             </h2>
             <p className="text-sm text-gray-400">
-               核心逻辑：MA & EMA (20/60/120) 六线密集度检测 + AI 变盘预测
+               自动筛选 4小时 (4H) 或 1小时 (1H) 级别中最符合【密集变盘】或【明确趋势】的标的。
             </p>
           </div>
 
@@ -142,7 +142,7 @@ const App: React.FC = () => {
                  <div className="absolute w-full h-full border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                  <span className="text-xs font-mono text-white">{progress}%</span>
               </div>
-              <p className="text-gray-400 mt-4 animate-pulse">正在逐个分析币种数据，请耐心等待...</p>
+              <p className="text-gray-400 mt-4 animate-pulse">正在双周期(1H/4H)扫描数据，请耐心等待...</p>
               <p className="text-xs text-gray-600 mt-2">为防止数据接口限流，加载速度已优化</p>
            </div>
         ) : (

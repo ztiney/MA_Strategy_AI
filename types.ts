@@ -26,6 +26,7 @@ export interface MASet {
 
 export interface TradeSetup {
   symbol: string;
+  interval: '1h' | '4h'; // New field for timeframe
   price: number;
   mas: MASet;
   densityScore: number; // Percentage spread between highest and lowest MA

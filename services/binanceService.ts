@@ -14,12 +14,12 @@ const mapData = (data: any[]): Kline[] => {
   }));
 };
 
-// Fetch 4H candles with multi-strategy redundancy
-export const fetchKlines = async (symbol: string, limit: number = 300): Promise<Kline[]> => {
+// Fetch candles with interval support
+export const fetchKlines = async (symbol: string, interval: string, limit: number = 300): Promise<Kline[]> => {
   // Use unique timestamp to prevent caching
   const ts = Date.now();
-  const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=4h&limit=${limit}`;
-  const dataApiUrl = `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=4h&limit=${limit}`;
+  const binanceUrl = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
+  const dataApiUrl = `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`;
 
   // Define strategies in order of preference
   const strategies = [
@@ -94,7 +94,7 @@ export const fetchKlines = async (symbol: string, limit: number = 300): Promise<
     }
   }
 
-  console.error(`All fetch strategies failed for ${symbol}. This usually indicates a network block or API rate limit.`);
+  console.error(`All fetch strategies failed for ${symbol} ${interval}.`);
   return [];
 };
 
@@ -156,9 +156,9 @@ const calculateATR = (klines: Kline[], period: number = 14): number => {
   return trSum / period;
 };
 
-export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> => {
-  const klines = await fetchKlines(symbol);
-  if (klines.length < 150) return null; // Need enough data
+const analyzeInterval = async (symbol: string, interval: '1h' | '4h'): Promise<TradeSetup | null> => {
+  const klines = await fetchKlines(symbol, interval);
+  if (klines.length < 150) return null;
 
   const currentPrice = parseFloat(klines[klines.length - 1].close);
   const atr = calculateATR(klines, 14);
@@ -180,53 +180,44 @@ export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> 
     ema120: ema120Arr[ema120Arr.length - 1],
   };
 
-  // Check valid calculations
   if (!mas.ma120 || !mas.ema120) return null;
 
-  // --- 1. Density Calculation (Spread of 6 lines) ---
+  // --- 1. Density Calculation ---
   const allValues = Object.values(mas);
   const maxVal = Math.max(...allValues);
   const minVal = Math.min(...allValues);
   const spread = maxVal - minVal;
-  const densityScore = (spread / currentPrice) * 100; // Spread Percentage
+  const densityScore = (spread / currentPrice) * 100;
 
-  // --- 2. Price Deviation Calculation ---
-  // How far is the price from the "center" of the moving averages?
-  // If Price is too far away, it's not a consolidation, it's a breakout/runaway.
+  // --- 2. Price Deviation ---
   const averageMA = allValues.reduce((sum, val) => sum + val, 0) / allValues.length;
   const priceDeviation = Math.abs(currentPrice - averageMA) / currentPrice * 100;
 
-  // Thresholds for 4H chart
-  const DENSE_THRESHOLD = 2.0; // Lines must be within 2% of each other
-  const PRICE_DEV_THRESHOLD = 3.0; // Price must be within 3% of the MA center
+  // Thresholds (Slightly looser for 1H might be needed, but keeping consistent for now)
+  const DENSE_THRESHOLD = 2.0; 
+  const PRICE_DEV_THRESHOLD = 3.0;
 
-  // Strict Definition of "Watch/Consolidation":
-  // 1. MAs are tight.
-  // 2. Price is still NEAR the MAs (hasn't pumped/dumped away yet).
   const isDense = (densityScore < DENSE_THRESHOLD) && (priceDeviation < PRICE_DEV_THRESHOLD);
 
   let signal = SignalType.WAIT;
-  let reason = "均线发散，无明确形态";
+  let reason = `[${interval}] 均线发散，无明确形态`;
 
-  // Trend determination using Long Term lines
   const isBullishAlignment = mas.ma20 > mas.ma60 && mas.ma60 > mas.ma120;
   const isBearishAlignment = mas.ma20 < mas.ma60 && mas.ma60 < mas.ma120;
 
   if (isDense) {
     signal = SignalType.WATCH;
-    reason = `6线高度密集 (宽${densityScore.toFixed(2)}%) 且价格在均线附近 (偏${priceDeviation.toFixed(2)}%)，静待变盘。`;
+    reason = `[${interval}] 6线高度密集 (宽${densityScore.toFixed(2)}%) 且价格在均线附近，关注变盘。`;
   } else {
-    
     if (isBullishAlignment && currentPrice > maxVal) {
       signal = SignalType.LONG;
-      reason = "均线多头排列 (MA20>60>120) 且价格站上所有均线，趋势向上。";
+      reason = `[${interval}] 均线多头排列且价格站上所有均线。`;
     } else if (isBearishAlignment && currentPrice < minVal) {
       signal = SignalType.SHORT;
-      reason = "均线空头排列 (MA20<60<120) 且价格跌破所有均线，趋势向下。";
+      reason = `[${interval}] 均线空头排列且价格跌破所有均线。`;
     } else if (densityScore < DENSE_THRESHOLD && priceDeviation >= PRICE_DEV_THRESHOLD) {
-       // Special case: MAs are tight, but Price ran away
        signal = SignalType.WAIT;
-       reason = `均线虽然密集，但价格已大幅偏离 (${priceDeviation.toFixed(2)}%)，乖离率过大，防范回落风险。`;
+       reason = `[${interval}] 均线密集但价格偏离过大 (${priceDeviation.toFixed(2)}%)。`;
     }
   }
 
@@ -245,10 +236,11 @@ export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> 
 
   return {
     symbol,
+    interval,
     price: currentPrice,
     mas,
     densityScore,
-    priceDeviation, // Return this new metric
+    priceDeviation,
     atr,
     signal,
     entryPrice: currentPrice,
@@ -257,4 +249,26 @@ export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> 
     isDense,
     reason
   };
+};
+
+// Main Export: dual timeframe analysis
+export const analyzeSymbol = async (symbol: string): Promise<TradeSetup | null> => {
+  // Parallel fetch for speed, but error handled individually inside
+  const [setup4h, setup1h] = await Promise.all([
+    analyzeInterval(symbol, '4h'),
+    analyzeInterval(symbol, '1h')
+  ]);
+
+  // Priority Logic to decide which one to show:
+  
+  // 1. WATCH (Dense) is the most valuable signal
+  if (setup4h?.signal === SignalType.WATCH) return setup4h;
+  if (setup1h?.signal === SignalType.WATCH) return setup1h;
+
+  // 2. Trend (LONG/SHORT) is next
+  if (setup4h && (setup4h.signal === SignalType.LONG || setup4h.signal === SignalType.SHORT)) return setup4h;
+  if (setup1h && (setup1h.signal === SignalType.LONG || setup1h.signal === SignalType.SHORT)) return setup1h;
+
+  // 3. Fallback to 4H if it exists, else 1H
+  return setup4h || setup1h || null;
 };

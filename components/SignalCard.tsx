@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TradeSetup, SignalType } from '../types';
 import { getGeminiAnalysis } from '../services/geminiService';
-import { ArrowTrendingUpIcon, ArrowTrendingDownIcon, EyeIcon, BoltIcon, SparklesIcon } from '@heroicons/react/24/solid';
+import { ArrowTrendingUpIcon, ArrowTrendingDownIcon, EyeIcon, BoltIcon, SparklesIcon, ClockIcon } from '@heroicons/react/24/solid';
 
 interface SignalCardProps {
   setup: TradeSetup;
@@ -43,7 +43,11 @@ const SignalCard: React.FC<SignalCardProps> = ({ setup }) => {
         <div>
           <h3 className="text-xl font-bold text-white flex items-center gap-2">
             {setup.symbol}
-            {setup.isDense && <span className="bg-crypto-yellow text-black text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">密集变盘区</span>}
+            {/* Timeframe Badge */}
+            <span className={`text-xs font-bold px-2 py-0.5 rounded border ${setup.interval === '4h' ? 'bg-purple-900/40 text-purple-300 border-purple-700' : 'bg-blue-900/40 text-blue-300 border-blue-700'}`}>
+              {setup.interval.toUpperCase()}
+            </span>
+            {setup.isDense && <span className="bg-crypto-yellow text-black text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">密集变盘</span>}
           </h3>
           <p className="text-2xl font-mono text-white mt-1">${setup.price.toFixed(setup.price < 1 ? 4 : 2)}</p>
         </div>
@@ -112,12 +116,12 @@ const SignalCard: React.FC<SignalCardProps> = ({ setup }) => {
             {loadingAi ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                AI 正在解析六线形态...
+                AI 正在解析形态...
               </>
             ) : (
               <>
                 <SparklesIcon className="w-4 h-4" />
-                Gemini 深度策略分析
+                Gemini 深度分析
               </>
             )}
           </button>
