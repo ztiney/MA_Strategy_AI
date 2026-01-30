@@ -3,7 +3,15 @@ import { TradeSetup, SignalType } from '../types';
 
 export const getGeminiAnalysis = async (setup: TradeSetup): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // Vite replaces process.env.API_KEY with the actual string during build.
+    // We access it directly to ensure the replacement works correctly.
+    const apiKey = process.env.API_KEY;
+    
+    if (!apiKey) {
+      return "请先设置 API Key 以获取 AI 分析。";
+    }
+
+    const ai = new GoogleGenAI({ apiKey });
     const modelId = 'gemini-2.5-flash-latest'; 
 
     const direction = setup.signal === SignalType.LONG ? "做多趋势" : 
